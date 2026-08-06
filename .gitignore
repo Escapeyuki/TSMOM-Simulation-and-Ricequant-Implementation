@@ -1,10 +1,7 @@
 # Claude Code local settings
 # (.claude/* not .claude/ -- git will not descend into an excluded directory,
 # so the negations below would never be reached.)
-.claude/*
-# ...except the hand-written instructions, which are not regenerable.
-!.claude/CLAUDE.md
-!.claude/commands/
+.claude/
 
 # Editor
 .vscode/
