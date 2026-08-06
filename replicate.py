@@ -34,15 +34,17 @@ from tsmom import (MONTHS_PER_YEAR, VOL_TARGET, build_tsmom, ex_ante_annual_vol,
                    performance)
 
 
-def ols(y, X, names):
+def ols(y, X, names, cluster=None):
     """Ordinary least squares regression with t-statistics.
 
     Written out by hand rather than importing statsmodels, because we only need
     three regressions and this is about fifteen lines.
 
-    y     -- what we are explaining (a return series)
-    X     -- list of explanatory series
-    names -- labels for those series, for the printed table
+    y       -- what we are explaining (a return series)
+    X       -- list of explanatory series
+    names   -- labels for those series, for the printed table
+    cluster -- optional group label per observation. Pass this when the rows are
+               a pooled panel rather than one time series; see below.
 
     A t-statistic above about 2 in absolute value is the usual "this is
     probably not noise" threshold at the 5% level.
@@ -60,8 +62,37 @@ def ols(y, X, names):
     dof = len(y) - X.shape[1]           # degrees of freedom
     s2 = resid @ resid / dof            # estimated variance of the errors
 
-    # Standard errors sit on the diagonal of s2 * (X'X)^-1.
-    se = np.sqrt(np.diag(s2 * np.linalg.pinv(X.T @ X)))
+    xtx_inv = np.linalg.pinv(X.T @ X)
+
+    if cluster is None:
+        # Standard errors sit on the diagonal of s2 * (X'X)^-1.
+        se = np.sqrt(np.diag(s2 * xtx_inv))
+    else:
+        # Clustered standard errors, for the pooled panel regressions in the
+        # paper's Fig. 1: "t-statistics that account for group-wise clustering
+        # by time (at the monthly level)" (Section 3.1).
+        #
+        # Why it matters: stacking 70 contracts x 190 months gives ~13,000 rows,
+        # but the contracts move together within a month, so those rows carry
+        # nowhere near 13,000 independent pieces of information. Plain OLS
+        # standard errors assume they do and come out far too small, which turns
+        # noise into significance. Clustering by month replaces the independence
+        # assumption across contracts with one across months only.
+        #
+        # The sandwich: (X'X)^-1 [ sum over groups of X_g' e_g e_g' X_g ] (X'X)^-1.
+        labels = np.asarray(cluster)
+        meat = np.zeros((X.shape[1], X.shape[1]))
+        for g in np.unique(labels):
+            rows = labels == g
+            xg_eg = X[rows].T @ resid[rows]     # a vector per group
+            meat += np.outer(xg_eg, xg_eg)
+
+        n_groups = len(np.unique(labels))
+        # The usual finite-sample correction; without it the standard errors are
+        # biased down when the number of groups is small.
+        correction = (n_groups / (n_groups - 1)) * ((len(y) - 1) / dof)
+        cov = correction * (xtx_inv @ meat @ xtx_inv)
+        se = np.sqrt(np.diag(cov))
 
     # R-squared: the fraction of the variation in y the model explains.
     r2 = 1 - (resid @ resid) / ((y - y.mean()) @ (y - y.mean()))

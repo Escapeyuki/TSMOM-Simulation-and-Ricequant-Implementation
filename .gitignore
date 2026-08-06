@@ -1,0 +1,34 @@
+# Claude Code local settings
+# (.claude/* not .claude/ -- git will not descend into an excluded directory,
+# so the negations below would never be reached.)
+.claude/*
+# ...except the hand-written instructions, which are not regenerable.
+!.claude/CLAUDE.md
+!.claude/commands/
+
+# Editor
+.vscode/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Excel lock files
+~$*.xlsx
+
+# Data cache (regenerable)
+cache/
+
+# PNG files
+*.png
+
+# Backtest artifacts (regenerable, and the log is ~1MB of engine warnings)
+rq_backtest.log
+rq_result.pkl
+rq_report/
+
+# Exported results (regenerable: python export_dashboard.py)
+outputs/
