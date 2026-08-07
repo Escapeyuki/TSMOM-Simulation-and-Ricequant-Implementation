@@ -7,4 +7,5 @@ This repository tries to replicate the results of the famous paper Time Series M
     * Initial Push
 
 ## Link to dashboard
-[TSMOM-Dashboard](https://github.com/Escapeyuki/TSMOM-Dashboard)
+[TSMOM-Dashboard (link to the github repo)](https://github.com/Escapeyuki/TSMOM-Dashboard)
+[TSMOM-Dashboard (link to the website)](https://escapeyuki.github.io/TSMOM-Dashboard/)
